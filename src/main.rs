@@ -14,14 +14,24 @@ fn main() {
     info!("Verifying domains!");
 
 
+    // let domains = [
+    //     "admin.test.spasmodic.info",
+    //     "api.test.spasmodic.info",
+    //     "imove-no.test.spasmodic.info",
+    //     "imove-se.test.spasmodic.info",
+    //     "kinto-no.test.spasmodic.info",
+    //     "schysst-se.test.spasmodic.info",
+    //     "imove.no"
+    // ];
+
+
     let domains = [
-        "admin.test.spasmodic.info",
-        "api.test.spasmodic.info",
-        "imove-no.test.spasmodic.info",
-        "imove-se.test.spasmodic.info",
-        "kinto-no.test.spasmodic.info",
-        "schysst-se.test.spasmodic.info",
-        "imove.no"
+        "admin.dev.imove.no",
+        "api.dev.imove.no",
+        "imove-no.dev.imove.no",
+        "imove-se.dev.imove.no",
+        "kinto-no.dev.imove.no",
+        "schysst-se.dev.imove.no"
     ];
 
 
