@@ -1,10 +1,11 @@
+
 use std::net::TcpStream;
-
-
+use std::env;
+use dns_test::types::CertificateMetadata;
 use log::{info,error};
 use env_logger::Env;
 
-use openssl::ssl::{SslConnector, SslMethod, Ssl};
+use openssl::ssl::{SslConnector, SslMethod};
 
 fn main() {
 
@@ -14,76 +15,87 @@ fn main() {
     info!("Verifying domains!");
 
 
-    // let domains = [
-    //     "admin.test.spasmodic.info",
-    //     "api.test.spasmodic.info",
-    //     "imove-no.test.spasmodic.info",
-    //     "imove-se.test.spasmodic.info",
-    //     "kinto-no.test.spasmodic.info",
-    //     "schysst-se.test.spasmodic.info",
-    //     "imove.no"
-    // ];
+    let domains = extract_domains();
 
-
-    // let domains = [
-    //     "admin.dev.imove.no",
-    //     "api.dev.imove.no",
-    //     "imove-no.dev.imove.no",
-    //     "imove-se.dev.imove.no",
-    //     "kinto-no.dev.imove.no",
-    //     "schysst-se.dev.imove.no"
-    // ];
-
-    let domains = [
-        // "kinto-no.prod.imove.no",
-
-        "schysst.se",
-        "imove.se",
-        "imove.no",
-        "www.imove.no",
-        "admin.prod.imove.no",
-        "api.prod.imove.no",
-    ];
-
-
-            // "kinto-flex.no",
-        // "www.kinto-flex.no", check kinto-no.prod.imove.no not kinto-flex.no which is waaaay to slow
-
-
+    let mut metadata : Vec<CertificateMetadata> = Vec::new();
     for domain in domains {
+        let domain_str = domain.as_str();
         info!("Verifying {}", domain);
         let connector = SslConnector::builder(SslMethod::tls()).expect("Failed to created ssl connector!").build();
 
-        let stream_result = TcpStream::connect(format!("{}:443", String::from(domain)));
+        let stream_result = TcpStream::connect(format!("{}:443", domain));
 
         match stream_result {
             Ok(stream) => {
-                info!("{} resolved successfully!", domain);
-                match connector.connect(domain, stream)  {
-                    Ok(sslStream) => {
-                        // let certificate = sslStream.ssl().peer_certificate().ok_or("Certificate not found").unwrap();
-                        // let not_after = certificate.not_after();
-                        // let certificate = sadf.ssl().certificate();
-                        // let cert = certificate.unwrap();
-                        // info!("{:?}", certificate);
-                        // info!("Certificate: {:?}", certificate.unwrap());
-                        info!("{} domain has valid ssl certificate!", domain);
+                info!("{} resolved successfully!", domain_str);
+                match connector.connect(domain_str, stream)  {
+                    Ok(ssl_stream) => {
+                        info!("{} domain has valid ssl certificate!", domain_str);
+                        let certificate = ssl_stream.ssl().peer_certificate().ok_or("Certificate not found").expect("Failed to extract certificated data!");
+                        info!("{:?}", certificate.not_after());
+                        info!("{:?}", certificate.not_before());
+
+                        let meta = CertificateMetadata{domain: domain_str.to_string(), not_after: certificate.not_after().to_string(), not_before: certificate.not_before().to_string()};
+                        metadata.push(meta);
+
                     },
                     Err(error) => {
-                        error!("{} domain not valid ssl! Error: {}", domain, error);
+                        error!("{} domain not valid ssl! Error: {}", domain_str, error);
                     }
                 }
             },
             Err(error) => {
-                error!("{} failed to resolve domain before ssl verification. Error: {}", domain, error);
+                error!("{} failed to resolve domain before ssl verification. Error: {}", domain_str, error);
             }
         }
-
-    
-
-
 
 
     }
 
+}
+
+pub fn extract_domains() -> Vec<String>{
+    let mut domains : Vec<String> = Vec::new();
+
+    let domain_var = env::var("DOMAINS").expect("You must set the DOMAIN env var with comma separated values. Ie 'test.net,test2.com'");
+
+    let split_list = domain_var.split(",");
+
+    for str in split_list {
+        if !str.is_empty(){
+            domains.push(String::from(str));
+        }
+    }
+
+
+
+    return domains;
+
+}
+
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_domain_env_var(){
+        let domains = "vg.no,itavisen.no,dagbladet.no,".to_string();
+
+        env::set_var("DOMAINS", domains);
+
+        let result = extract_domains();
+
+
+        assert!(result.len() == 3);
+        assert!(result.contains(&String::from("vg.no")));
+        assert!(result.contains(&String::from("itavisen.no")));
+        assert!(result.contains(&String::from("dagbladet.no")));
+        assert!(result.contains(&String::from("")) == false);
+
+
+
+    }
 }
