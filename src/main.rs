@@ -4,7 +4,7 @@ use std::net::TcpStream;
 use log::{info,error};
 use env_logger::Env;
 
-use openssl::ssl::{SslConnector, SslMethod};
+use openssl::ssl::{SslConnector, SslMethod, Ssl};
 
 fn main() {
 
@@ -25,14 +25,29 @@ fn main() {
     // ];
 
 
+    // let domains = [
+    //     "admin.dev.imove.no",
+    //     "api.dev.imove.no",
+    //     "imove-no.dev.imove.no",
+    //     "imove-se.dev.imove.no",
+    //     "kinto-no.dev.imove.no",
+    //     "schysst-se.dev.imove.no"
+    // ];
+
     let domains = [
-        "admin.dev.imove.no",
-        "api.dev.imove.no",
-        "imove-no.dev.imove.no",
-        "imove-se.dev.imove.no",
-        "kinto-no.dev.imove.no",
-        "schysst-se.dev.imove.no"
+        // "kinto-no.prod.imove.no",
+
+        "schysst.se",
+        "imove.se",
+        "imove.no",
+        "www.imove.no",
+        "admin.prod.imove.no",
+        "api.prod.imove.no",
     ];
+
+
+            // "kinto-flex.no",
+        // "www.kinto-flex.no", check kinto-no.prod.imove.no not kinto-flex.no which is waaaay to slow
 
 
     for domain in domains {
@@ -45,8 +60,14 @@ fn main() {
             Ok(stream) => {
                 info!("{} resolved successfully!", domain);
                 match connector.connect(domain, stream)  {
-                    Ok(_) => {
-                        info!("{} domain has valid ssl certificate!", domain)
+                    Ok(sslStream) => {
+                        // let certificate = sslStream.ssl().peer_certificate().ok_or("Certificate not found").unwrap();
+                        // let not_after = certificate.not_after();
+                        // let certificate = sadf.ssl().certificate();
+                        // let cert = certificate.unwrap();
+                        // info!("{:?}", certificate);
+                        // info!("Certificate: {:?}", certificate.unwrap());
+                        info!("{} domain has valid ssl certificate!", domain);
                     },
                     Err(error) => {
                         error!("{} domain not valid ssl! Error: {}", domain, error);
